@@ -6,9 +6,12 @@ def read_file(path):
 	file = open(path,"r")
 	all_text_lan = []
 	for l in file:
-		text_language =re.split("\t",l) #Separate text from language id
-		clean_text_language = [text_language[0],text_language[1].strip()] #Remove \n from language id
-		all_text_lan.append(clean_text_language)
+		try:
+			text_language =re.split("\t",l) #Separate text from language id
+			clean_text_language = [text_language[0],text_language[1].strip()] #Remove \n from language id
+			all_text_lan.append(clean_text_language)
+		except:
+			all_text_lan.append(l.strip())
 	return all_text_lan	
 
 def separate_language(list_of_lists):
@@ -204,21 +207,51 @@ def main():
 				language_sen_maj[l].append(majority) 
 			except:
 				language_sen_maj[l].append("NaN")
-	print(language_sen_maj["my"])
+
+
+
+#Test
+	test_sen_lan_list = read_file("data/test/test.txt") #Extract data
 	'''
-	for language,sentences in dev_lang_senstok_dict.items():
-		for s in sentences:
+	test_lang_senstok_dict = tokenize_sentences(test_lang_sens_dict) #Tokenize sentences
+	language_sen_maj = {language:[] for language in languages_list}
+	for l,sentences in test_lang_senstok_dict.items():
+		for sentence in sentences:
 			trigrams = []
-			for n,word in enumerate(s):
+			for n,word in enumerate(sentence):
+				if n > 1:
+					trigrams.append((sentence[n-2],sentence[n-1],word))
+			tetragrams = []
+			for n,word in enumerate(sentence):
 				if n > 2:
-					trigrams.append((s[n-1],word))
+					tetragrams.append((sentence[n-3],sentence[n-2],sentence[n-1],word))
+			language_probability_dict = {}
 			for language,ngrams in tri_freq_dict.items():
-				print(ngrams)
+				probabilities = []
 				try:
 					initial_prob = ngrams[trigrams[0]]
-					print(initial_prob)
+					probabilities.append(initial_prob)
 				except:
 					continue
+				for t in tetragrams:
+					try:
+						transitional_prob = tetra_freq_dict[language][t]
+						probabilities.append(transitional_prob)
+					except:
+						continue
+				prob = math.prod(probabilities)
+				language_probability_dict[language] = prob
+			try:
+				majority = list(language_probability_dict.keys())[0]
+				probability = list(language_probability_dict.values())[0]
+				for lang,prob in language_probability_dict.items():
+					if prob > probability:
+						majority = lang
+						probability = prob
+				language_sen_maj[l].append(majority) 
+			except:
+				language_sen_maj[l].append("NaN")
+	print(language_sen_maj["es-ES"])
 	'''
 if __name__=='__main__':
 	main()
