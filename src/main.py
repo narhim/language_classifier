@@ -132,7 +132,7 @@ def count_ngrams(dict_ngrams,len_dict,dictmin_ngrams):
 				dict_freq[n] +=1
 			else:
 				dict_freq[n] = 1
-		dict_freq = {n:f/len_dict[language] for n,f in dict_freq.items()}
+		#dict_freq = {n:f/len_dict[language] for n,f in dict_freq.items()}
 		dict_freq_ngram[language] = dict_freq
 	return dict_freq_ngram
 
@@ -145,16 +145,31 @@ def main():
 	lang_big_dict = build_bigrams(lang_senstok_dict)#Build bigrams
 	lang_tri_dict = build_trigrams(lang_senstok_dict)#Build trigrams
 	lang_tetra_dict = build_tetragrams(lang_senstok_dict)#Build tetragrams
-	tri_freq_dict = count_ngrams(lang_tri_dict,lang_nsens_dict,lang_big_dict)
-	tetra_freq_dict = count_ngrams(lang_tetra_dict,lang_nsens_dict,lang_tri_dict)
-	
+	abs_tri_freq_dict = count_ngrams(lang_tri_dict,lang_nsens_dict,lang_big_dict)
+	tri_freq_dict = {}
+	for language,ngrams in abs_tri_freq_dict.items():
+		nsens = lang_nsens_dict[language]
+		clean_ngrams = {}
+		for n,f in ngrams.items():
+			clean_ngrams[n] = f/nsens
+		tri_freq_dict[language] = clean_ngrams
+	abs_tetra_freq_dict = count_ngrams(lang_tetra_dict,lang_nsens_dict,lang_tri_dict)
+	tetra_freq_dict = {}
+	for language,ngrams in abs_tetra_freq_dict.items():
+		ntetragrams = len(ngrams.keys())
+		clean_ngrams = {}
+		for n,f in ngrams.items():
+			clean_ngrams[n] = f/ntetragrams
+		tetra_freq_dict[language] = clean_ngrams
 	#Dev
 	dev_sen_lan_list = read_file("data/train_dev/devel.txt") #Extract data
 	gold_labels_dict = {n:pair[1] for n,pair in enumerate(dev_sen_lan_list)}
 	id_sentence_dict = {n:pair[0] for n,pair in enumerate(dev_sen_lan_list)}
 	dev_lang_sens_dict = separate_language(dev_sen_lan_list)
 	dev_lang_senstok_dict = tokenize_sentences(dev_lang_sens_dict) #Tokenize sentences
-	sentence = dev_lang_senstok_dict["es-ES"][0]
+	print(dev_lang_senstok_dict.keys())
+	sentence = dev_lang_senstok_dict["my"][1]
+	print(sentence)
 	trigrams = []
 	for n,word in enumerate(sentence):
 		if n > 1:
