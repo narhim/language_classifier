@@ -167,34 +167,44 @@ def main():
 	id_sentence_dict = {n:pair[0] for n,pair in enumerate(dev_sen_lan_list)}
 	dev_lang_sens_dict = separate_language(dev_sen_lan_list)
 	dev_lang_senstok_dict = tokenize_sentences(dev_lang_sens_dict) #Tokenize sentences
-	print(dev_lang_senstok_dict.keys())
-	sentence = dev_lang_senstok_dict["my"][1]
-	print(sentence)
-	trigrams = []
-	for n,word in enumerate(sentence):
-		if n > 1:
-			trigrams.append((sentence[n-2],sentence[n-1],word))
-	tetragrams = []
-	for n,word in enumerate(sentence):
-		if n > 2:
-			tetragrams.append((sentence[n-3],sentence[n-2],sentence[n-1],word))
-	language_probability_dict = {}
-	for language,ngrams in tri_freq_dict.items():
-		probabilities = []
-		try:
-			initial_prob = ngrams[trigrams[0]]
-			probabilities.append(initial_prob)
-		except:
-			continue
-		for t in tetragrams:
+	language_sen_maj = {language:[] for language in languages_list}
+	for l,sentences in dev_lang_senstok_dict.items():
+		for sentence in sentences:
+			trigrams = []
+			for n,word in enumerate(sentence):
+				if n > 1:
+					trigrams.append((sentence[n-2],sentence[n-1],word))
+			tetragrams = []
+			for n,word in enumerate(sentence):
+				if n > 2:
+					tetragrams.append((sentence[n-3],sentence[n-2],sentence[n-1],word))
+			language_probability_dict = {}
+			for language,ngrams in tri_freq_dict.items():
+				probabilities = []
+				try:
+					initial_prob = ngrams[trigrams[0]]
+					probabilities.append(initial_prob)
+				except:
+					continue
+				for t in tetragrams:
+					try:
+						transitional_prob = tetra_freq_dict[language][t]
+						probabilities.append(transitional_prob)
+					except:
+						continue
+				prob = math.prod(probabilities)
+				language_probability_dict[language] = prob
 			try:
-				transitional_prob = tetra_freq_dict[language][t]
-				probabilities.append(transitional_prob)
+				majority = list(language_probability_dict.keys())[0]
+				probability = list(language_probability_dict.values())[0]
+				for lang,prob in language_probability_dict.items():
+					if prob > probability:
+						majority = lang
+						probability = prob
+				language_sen_maj[l].append(majority) 
 			except:
-				continue
-		prob = math.prod(probabilities)
-		language_probability_dict[language] = prob
-	print(language_probability_dict)
+				language_sen_maj[l].append("NaN")
+	print(language_sen_maj["my"])
 	'''
 	for language,sentences in dev_lang_senstok_dict.items():
 		for s in sentences:
