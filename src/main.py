@@ -159,7 +159,7 @@ def main():
 		nsens = lang_nsens_dict[language]
 		clean_ngrams = {}
 		for n,f in ngrams.items():
-			clean_ngrams[n] = f/nsens
+			clean_ngrams[n] = (f+1)/nsens
 		tri_freq_dict[language] = clean_ngrams
 	abs_tetra_freq_dict = count_ngrams(lang_tetra_dict,lang_nsens_dict,lang_tri_dict)
 	tetra_freq_dict = {}
@@ -167,7 +167,7 @@ def main():
 		ntetragrams = len(ngrams.keys())
 		clean_ngrams = {}
 		for n,f in ngrams.items():
-			clean_ngrams[n] = f/ntetragrams
+			clean_ngrams[n] = (f+1)/ntetragrams
 		tetra_freq_dict[language] = clean_ngrams
 	
 	#Dev
@@ -193,13 +193,15 @@ def main():
 				initial_prob = ngrams[trigrams[0]]
 				probabilities.append(initial_prob)
 			except:
-				continue
+				initial_prob = 1/nsens
+				probabilities.append(initial_prob)
 			for t in tetragrams:
 				try:
 					transitional_prob = tetra_freq_dict[language][t]
 					probabilities.append(transitional_prob)
 				except:
-					continue
+					transitional_prob = 1/ntetragrams
+					probabilities.append(transitional_prob)
 			prob = math.prod(probabilities)
 			language_probability_dict[language] = prob
 		try:
