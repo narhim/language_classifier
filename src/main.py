@@ -127,7 +127,7 @@ def build_tetragrams(dict_sent_tok):
 					dict_tetra_sent[language].append((s[n-1],word))
 	return dict_tetra_sent
 
-def count_ngrams(dict_ngrams,len_dict,dictmin_ngrams):
+def count_ngrams(dict_ngrams,len_dict):
 	dict_freq_ngram = dict.fromkeys(languages_list)
 	num_ngrams = len(dict_ngrams.values())
 	for language,ngrams in dict_ngrams.items():
@@ -137,40 +137,41 @@ def count_ngrams(dict_ngrams,len_dict,dictmin_ngrams):
 				dict_freq[n] +=1
 			else:
 				dict_freq[n] = 1
-		#dict_freq = {n:f/len_dict[language] for n,f in dict_freq.items()}
 		dict_freq_ngram[language] = dict_freq
 	return dict_freq_ngram
 
 def main():
 	#Train
-	sen_lan_list = read_file("data/train_dev/train.txt") #Extract data
-	lang_sens_dict = separate_language(sen_lan_list) #Separate by language
-	lang_nsens_dict = {lang:len(sentences) for lang,sentences in lang_sens_dict.items()}
-	lang_senstok_dict = {}
+	sen_lan_list = read_file("data/train_dev/train.txt") #Extract data [[sentence,language]]
+	lang_sens_dict = separate_language(sen_lan_list) #Separate by language {language:[s1,s2]}
+	lang_nsens_dict = {lang:len(sentences) for lang,sentences in lang_sens_dict.items()} #Compute number of sentences per language {language:#sentences}
+	tri_except_dict = {language:(1/n) for language,n in lang_nsens_dict.items()} #Smoothing values for initial states {language:1/#sentences}
+	lang_senstok_dict = {}#Tokenize by letters {language:[[l,e,t, ,t,e,r,s],[l,e,t, ,t,e,r,s]]}
 	for language,sentences in lang_sens_dict.items():
 		corpus_list = tokenize_sentences(sentences)
 		lang_senstok_dict[language] = corpus_list
-	lang_big_dict = build_bigrams(lang_senstok_dict)#Build bigrams
-	lang_tri_dict = build_trigrams(lang_senstok_dict)#Build trigrams
-	lang_tetra_dict = build_tetragrams(lang_senstok_dict)#Build tetragrams
-	abs_tri_freq_dict = count_ngrams(lang_tri_dict,lang_nsens_dict,lang_big_dict)
-	tri_freq_dict = {}
+	lang_tri_dict = build_trigrams(lang_senstok_dict)#Build trigrams {lang:[ngram,ngram]}
+	lang_tetra_dict = build_tetragrams(lang_senstok_dict)#Build tetragrams {lang:[ngram,ngram]}
+	abs_tri_freq_dict = count_ngrams(lang_tri_dict,lang_nsens_dict) #Compute abs frequencies{lang:[{ngram:freq},{ngram:freq}]}
+	tri_freq_dict = {}#Transform into initial state frequencies {lang:[{ngram:freq},{ngram:freq}]}
 	for language,ngrams in abs_tri_freq_dict.items():
 		nsens = lang_nsens_dict[language]
 		clean_ngrams = {}
 		for n,f in ngrams.items():
 			clean_ngrams[n] = (f+1)/nsens
 		tri_freq_dict[language] = clean_ngrams
-	abs_tetra_freq_dict = count_ngrams(lang_tetra_dict,lang_nsens_dict,lang_tri_dict)
-	tetra_freq_dict = {}
+	
+	abs_tetra_freq_dict = count_ngrams(lang_tetra_dict,lang_nsens_dict)#Compute abs frequencies{lang:[{ngram:freq},{ngram:freq}]}
+	tetra_freq_dict = {}#Transform into initial state frequencies {lang:[{ngram:freq},{ngram:freq}]}
 	for language,ngrams in abs_tetra_freq_dict.items():
 		ntetragrams = len(ngrams.keys())
 		clean_ngrams = {}
 		for n,f in ngrams.items():
 			clean_ngrams[n] = (f+1)/ntetragrams
 		tetra_freq_dict[language] = clean_ngrams
-	
+	tetra_except_dict = {lang:(1/len(v)) for lang,v in abs_tetra_freq_dict.items()}
 	#Dev
+	
 	dev_sen_lan_list = read_file("data/train_dev/devel.txt") #Extract data
 	gold_labels_list = [pair[1] for n,pair in enumerate(dev_sen_lan_list)]
 	id_sentence_dict = {n:pair[0] for n,pair in enumerate(dev_sen_lan_list)}
@@ -193,14 +194,15 @@ def main():
 				initial_prob = ngrams[trigrams[0]]
 				probabilities.append(initial_prob)
 			except:
-				initial_prob = 1/nsens
+				initial_prob = tri_except_dict[language]
 				probabilities.append(initial_prob)
 			for t in tetragrams:
 				try:
 					transitional_prob = tetra_freq_dict[language][t]
 					probabilities.append(transitional_prob)
 				except:
-					transitional_prob = 1/ntetragrams
+					#continue
+					transitional_prob = tetra_except_dict[language]
 					probabilities.append(transitional_prob)
 			prob = math.prod(probabilities)
 			language_probability_dict[language] = prob
