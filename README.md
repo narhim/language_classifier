@@ -4,7 +4,7 @@
 Contains the latex template as well as the compiled pdf that reviews Socher et al. (2013).
 
 ### Data
-Contains the data for training and testing the language classifier, which was obtain from the [Discriminating between Similar Languages 2015 Task](http://ttg.uni-saarland.de/lt4vardial2015/dsl.html). All READMEs in this directory are as in the source. The subsets are the following:
+Contains the data for training and testing the language classifier, which was obtained from the [Discriminating between Similar Languages 2015 Task](http://ttg.uni-saarland.de/lt4vardial2015/dsl.html). All READMEs in this directory are as in the source. The subsets are the following:
 1. **train.txt**: training set
 2. **dev.txt**: development set
 3. **test.txt**: test set- No gold labels.
